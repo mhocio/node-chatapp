@@ -1,5 +1,4 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
 const passport = require('passport');
 const monk =  require('monk');
 const flash = require('express-flash');
@@ -41,6 +40,8 @@ app.use(passport.session());
 app.use(methodOverride('_method'));
 
 app.use(express.static("views"));
+
+const { checkAuthenticated, checkNotAuthenticated } = require('./controllers/auth.js');
   
 app.get('/', checkAuthenticated, (req, res) => {
   //console.log("user");
@@ -48,67 +49,13 @@ app.get('/', checkAuthenticated, (req, res) => {
   res.render('index.ejs', { name: req.user.name });
 });
 
-let conversations = [];
+// let conversations = [];
+// app.get('/conversations', (req, res) => {
+//   res.send(conversations);
+// });
 
-app.get('/conversations', (req, res) => {
-  res.send(conversations);
-});
-
-//const authRoute = require('./routes/auth.js');
-//app.use('/auth', authRoute);
-
-app.get('/auth/login', checkNotAuthenticated, (req, res) => {
-  res.render('login.ejs');
-});
-  
-app.post('/auth/login', checkNotAuthenticated, passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/auth/login',
-    failureFlash: true
-  })
-);
-  
-app.get('/auth/register', checkNotAuthenticated, (req, res) => {
-  res.render('register.ejs');
-});
-  
-app.post('/auth/register', checkNotAuthenticated, async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10)
-    const newUser = {
-      id: Date.now().toString(),
-      name: req.body.name,
-      email: req.body.email,
-      password: hashedPassword
-    };
-    const createdUser = await users.insert(newUser);
-    console.log(createdUser);
-    res.redirect('/auth/login');
-  } catch (error) {
-    console.log(error);
-    res.redirect('/auth/register');
-  }
-});
-  
-app.delete('/logout', (req, res) => {
-  req.logOut();
-  res.redirect('/auth/login');
-});
-
-function checkAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-
-  res.redirect('/auth/login');
-};
-
-function checkNotAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.redirect('/');
-  }
-  next();
-};
+const authRoute = require('./routes/auth.js')(passport, '/auth', users);
+app.use('/auth', authRoute);
   
 const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
@@ -136,7 +83,6 @@ io.on("connection", function (socket) {
 
     socket.userId = thisUser.name;
     activeUsers.add(thisUser.name);
-
     console.log(activeUsers);
 
     io.emit("new user", [...activeUsers]);

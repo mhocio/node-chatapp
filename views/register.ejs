@@ -7,6 +7,9 @@
 </head>
 <body>
     <h1>Register</h1>
+    <% if (messages.error) { %>
+        <%= messages.error %>
+    <% } %>
     <form action="/auth/register" method="POST">
         <div>
             <label for="name">Name</label>
