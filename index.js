@@ -170,6 +170,14 @@ const activeUsers = new Set();
 io.on("connection", function (socket) {
   console.log("Made socket connection");
 
+  async function getCurrentUser() {
+    const userId = socket.request.session.passport.user;
+    const thisUser = await users.findOne({
+      id: userId
+    });
+    return thisUser;
+  }
+
   socket.on("new user", async function (data) {
     const userId = socket.request.session.passport.user;
     const thisUser = await users.findOne({
@@ -200,25 +208,30 @@ io.on("connection", function (socket) {
   // });
 
   socket.on('message', function(message) {
+    // TODO: check if can send messages to this room
+    // i.e. check if user belongs to this conversation
     message.timestamp = moment().valueOf();
-    console.log(socket.io);
-		io.to(message.room).emit('message', message);
+    getCurrentUser().then((user) => {
+      message.user = user.name;
+      //console.log(message);
+      io.to(message.room).emit('message', message);
+    })
   });
   
   socket.on('joinRoom', async function (req, callback) {
-    // check if can connect
+    // TODO: check if can connect
+    // i.e. check if user belongs to this conversation
     socket.join(req.room);
     const userId = socket.request.session.passport.user;
     const thisUser = await users.findOne({
       id: userId
     });
-    console.log(thisUser);
     socket.broadcast.to(req.room).emit('message', {
       username: 'System',
       text: thisUser.name + ' has joined!',
       timestamp: moment().valueOf()
     });
 
-    console.log("new user connectedo to room: " + req.room);
+    console.log(`new user: ${thisUser.name} connectedo to room: ` + req.room);
   });
 });

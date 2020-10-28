@@ -100,11 +100,21 @@ messageForm.addEventListener("submit", (e) => {
     return;
   }
 
-  socket.emit("chat message", {
-    message: inputField.value,
-    nick: userName,
+  // socket.emit("chat message", {
+  //   message: inputField.value,
+  //   nick: userName,
+  // });
+
+  console.log(inputField.value);
+
+  const roomId = document.querySelector(".message_form__rooom");
+  
+  socket.emit('message', {
+    text: inputField.value,
+    room: roomId.value
   });
 
+  roomId.value = "";
   inputField.value = "";
 });
 
@@ -123,18 +133,23 @@ socket.on("user disconnected", function (userName) {
   document.querySelector(`.${userName}-userlist`).remove();
 });
 
-socket.on("chat message", function (data) {
+/*socket.on("chat message", function (data) {
   addNewMessage({ user: data.nick, message: data.message });
+});*/
+
+socket.on("message", function (data) {
+  console.log(data);
+  //addNewMessage({ user: data.nick, message: data.message });
 });
 
 
-socket.on("typing", function (data) {
-  const { isTyping, nick } = data;
+// socket.on("typing", function (data) {
+//   const { isTyping, nick } = data;
 
-  if (!isTyping) {
-    fallback.innerHTML = "";
-    return;
-  }
+//   if (!isTyping) {
+//     fallback.innerHTML = "";
+//     return;
+//   }
 
-  fallback.innerHTML = `<p>${nick} is typing...</p>`;
-});
+//   fallback.innerHTML = `<p>${nick} is typing...</p>`;
+// });
