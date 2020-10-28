@@ -5,14 +5,30 @@ const inputField = document.querySelector(".message_form__input");
 const messageForm = document.querySelector(".message_form");
 const messageBox = document.querySelector(".messages__history");
 const fallback = document.querySelector(".fallback");
+const addUserToConversationButton = document.getElementById("addUserToConversationButton");
 
 //let userName = "";
+socket.emit("new user");
 
-const newUserConnected = (user) => {
-  //userName = user || `User${Math.floor(Math.random() * 1000000)}`;
-  socket.emit("new user");
-  //addToUsersBox(userName);
-};
+socket.on('connect', async function () {
+  async function getData(url) {
+    const response = await fetch(url);
+    return response.json();
+  }
+  
+  const rooms = await getData('/conversations');
+  console.log(rooms);
+
+  rooms.forEach(function (room) {
+    console.log(room);
+    socket.emit('joinRoom', {
+      room: room.id,
+    }, function (data) {
+      console.log(data);
+    });
+  });
+
+});
 
 const addToUsersBox = (userName) => {
   if (!!document.querySelector(`.${userName}-userlist`)) {
@@ -55,8 +71,28 @@ const addNewMessage = ({ user, message }) => {
   messageBox.innerHTML += user === userName ? myMsg : receivedMsg;
 };
 
-// new user is created so we generate nickname and emit event
-newUserConnected();
+addUserToConversationButton.addEventListener("click", addUserToConversation);
+
+function addUserToConversation() {
+  const addUserId = document.getElementById("addUserId");
+  const conversationId = document.getElementById("conversationId");
+
+  fetch(`/conversations/${conversationId.value}/adduser/${addUserId.value}`, {
+    method: 'PUT',
+  }).then((response) => {
+    addUserId.value = '';
+    conversationId.value = '';
+
+    console.log(response);
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error(response.status);
+    }
+  }).catch (error => {
+    console.log(error);
+  });
+}
 
 messageForm.addEventListener("submit", (e) => {
   e.preventDefault();

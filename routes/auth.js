@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 
 const {
   Router
@@ -33,10 +34,11 @@ module.exports = function (passport, authPath, users) {
     try {
       const hashedPassword = await bcrypt.hash(req.body.password, 10)
       const newUser = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         name: req.body.name,
         email: req.body.email,
-        password: hashedPassword
+        password: hashedPassword,
+        conversations: []
       };
       const createdUser = await users.insert(newUser);
       console.log(createdUser);

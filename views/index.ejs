@@ -13,6 +13,17 @@
         <form action="/auth/logout?_method=DELETE" method="POST">
             <button type="submit">Log Out</button>
         </form>
+
+        <form action="/conversations" method="POST">
+          <button type="submit">Create new conversation</button>
+        </form>
+
+        <div id="addUserToConversation">
+          <input type="name" name="addUserId" id="addUserId" required>
+          <input type="name" name="conversationId" id="conversationId" required>
+          <button type="submit" id="addUserToConversationButton">Add new user to the conversation</button>
+        </div>
+
         <div class="container">
           <div class="inbox">
             <div class="inbox__people">
