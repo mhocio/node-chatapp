@@ -6,9 +6,10 @@ const session = require('express-session');
 const methodOverride = require('method-override');
 const socket = require("socket.io");
 const { v4: uuidv4 } = require('uuid');
-const moment = require("moment");
+const { checkAuthenticated, checkNotAuthenticated } = require('./controllers/auth.js');
 
 require('dotenv').config();
+const port = process.env.PORT || 5000;
 
 // Db
 const usersDb = monk(process.env.MONGODB_USERS_URI);
@@ -43,7 +44,7 @@ sess = {
   })
 };
 // If secure is set, and you access your site over HTTP, the cookie will not be set
-if (process.env.MONGODB_USERS_URI === 'HTTPS') {
+if (process.env.PROTOCOL === 'HTTPS') {
   app.set('trust proxy', 1) // trust first proxy
   sess.cookie.secure = true // serve secure cookies
 }
@@ -55,8 +56,6 @@ app.use(passport.session());
 
 app.use(methodOverride('_method'));
 app.use(express.static("views"));
-
-const { checkAuthenticated, checkNotAuthenticated } = require('./controllers/auth.js');
   
 function Ex(status, name, message) {
   if (status < 0) {
@@ -68,6 +67,7 @@ function Ex(status, name, message) {
   this.message = message;
 }
 
+// ROUTES
 app.get('/', checkAuthenticated, (req, res) => {
   res.render('index.ejs', { name: req.user.name });
 });
@@ -142,19 +142,20 @@ app.post('/conversations', checkAuthenticated, async (req, res) => {
 const authRoute = require('./routes/auth.js')(passport, '/auth', users);
 app.use('/auth', authRoute);
 
+// Error middleware
 app.use((error, req, res, next) => {
-  if (error.status)
-      res.status(error.status);
-  else
-      res.status(500);
-
+  if (error.status) {
+    res.status(error.status);
+  } else {
+    res.status(500);
+  }
   res.json({
-      message: error.message,
-      stack: process.env.NODE_ENV === 'production' ? 'e' : error.stack,
+    message: error.message,
+    stack: process.env.NODE_ENV === 'production' ? 'e' : error.stack,
   });
-})
-  
-const port = process.env.PORT || 5000;
+});
+
+// INIT SERVER
 const server = app.listen(port, () => {
     console.log('\x1b[36m%s\x1b[0m', `Listening at: http://localhost:${port}`);
 });
@@ -164,74 +165,8 @@ const io = socket(server);
 io.use(function(socket, next){
   sessionMiddleware(socket.request, {}, next);  // Wrap the express middleware
 });
-
-const activeUsers = new Set();
-
 io.on("connection", function (socket) {
-  console.log("Made socket connection");
-
-  async function getCurrentUser() {
-    const userId = socket.request.session.passport.user;
-    const thisUser = await users.findOne({
-      id: userId
-    });
-    return thisUser;
-  }
-
-  socket.on("new user", async function (data) {
-    const userId = socket.request.session.passport.user;
-    const thisUser = await users.findOne({
-      id: userId
-    });
-    console.log("new user");
-    console.log(userId)
-
-    socket.userId = thisUser.name;
-    activeUsers.add(thisUser.name);
-    console.log(activeUsers);
-
-    io.emit("new user", [...activeUsers]);
-  });
-
-  socket.on("disconnect", () => {
-    activeUsers.delete(socket.userId);
-    console.log("user disconnected");
-    io.emit("user disconnected", socket.userId);
-  });
-
-  socket.on("chat message", function (data) {
-    io.emit("chat message", data);
-  });
-
-  // socket.on("typing", function (data) {
-  //   socket.broadcast.emit("typing", data);
-  // });
-
-  socket.on('message', function(message) {
-    // TODO: check if can send messages to this room
-    // i.e. check if user belongs to this conversation
-    message.timestamp = moment().valueOf();
-    getCurrentUser().then((user) => {
-      message.user = user.name;
-      //console.log(message);
-      io.to(message.room).emit('message', message);
-    })
-  });
-  
-  socket.on('joinRoom', async function (req, callback) {
-    // TODO: check if can connect
-    // i.e. check if user belongs to this conversation
-    socket.join(req.room);
-    const userId = socket.request.session.passport.user;
-    const thisUser = await users.findOne({
-      id: userId
-    });
-    socket.broadcast.to(req.room).emit('message', {
-      username: 'System',
-      text: thisUser.name + ' has joined!',
-      timestamp: moment().valueOf()
-    });
-
-    console.log(`new user: ${thisUser.name} connectedo to room: ` + req.room);
-  });
+  const { socketModule } = require('./controllers/socket.js');
+  socketModule(io, socket, users, conversations);
+  return io;
 });
