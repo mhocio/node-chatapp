@@ -84,11 +84,13 @@ function addUserToConversation() {
     conversationId.value = '';
 
     console.log(response);
-    if (response.ok) {
-        return response.json();
-    } else {
-        throw new Error(response.status);
-    }
+    // if (response.ok) {
+    //     return response.json();
+    // } else {
+    //     throw new Error(response);
+    // }
+  }).then((data) => {
+    console.log(data);
   }).catch (error => {
     console.log(error);
   });

@@ -27,9 +27,24 @@ const socketModule = function (io, socket, users, conversations) {
 		io.emit("new user", [...activeUsers]);
 	});
 
-	socket.on("disconnect", () => {
+	socket.on("disconnect", async () => {
 		activeUsers.delete(socket.userId);
 		console.log("user disconnected");
+
+		const user = await getCurrentUser();
+		console.log(user);
+
+		// TODO: store active users in the DB?
+		user.conversations.forEach(function (room) {
+			socket.broadcast.to(room.id).emit('message', {
+				username: 'System',
+				text: user.name + ' has left!',
+				timestamp: moment().valueOf(),
+				room: room,
+				username: user.name,
+			});
+		});
+
 		io.emit("user disconnected", socket.userId);
 	});
 
@@ -42,30 +57,29 @@ const socketModule = function (io, socket, users, conversations) {
 	// });
 
 	socket.on('message', async function (message) {
-		// TODO: check if can send messages to this room
-		// i.e. check if user belongs to this conversation
 		message.timestamp = moment().valueOf();
 		const conversation = await conversations.findOne({ id: message.room });
+		if (!conversation) {
+			return;
+		}
 		const user = await getCurrentUser();
+		
+		// if (vendors.some(e => e.Name === 'Magenic')) {
+		// 	/* vendors contains the element we're looking for */
+		// }
 
-		console.log(user);
-		console.log(conversation.participants);
-
-		/*var found = false;
+		var found = false;  // TODO: make it pretty and faster
 		for(var i = 0; i < conversation.participants.length; i++) {
 			if (conversation.participants[i].id == user.id) {
 					found = true;
 					break;
 			}
 		}
-		console.log(found);
-
-		if (conversation.participants.filter(e => e.id == user.id).length > 0) {
-			console.log("user is not in this conversation or it does not exist");
+		if (!found) {
 			return;
-		}*/
+		}
 
-		console.log("sending...");
+		console.log("sending message...");
 		message.user = user.name;
 		io.to(message.room).emit('message', message);
 	});

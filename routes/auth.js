@@ -41,10 +41,17 @@ module.exports = function (passport, authPath, users) {
         conversations: []
       };
       const createdUser = await users.insert(newUser);
-      console.log(createdUser);
+      //console.log(createdUser);
       res.redirect(authPath + '/login');
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
+      var errorMessage = "Please, try again"
+      if (error.message.includes("email_1 dup key")) {
+        errorMessage = "Email is already in use";
+      } else if (error.message.includes("name_1 dup key")) {
+        errorMessage = "Name is already in use";
+      }
+      req.flash('error', errorMessage);
       res.redirect(authPath + '/register');
     }
   });
