@@ -86,12 +86,14 @@ const server = app.listen(port, () => {
   console.log('\x1b[36m%s\x1b[0m', `Listening at: http://localhost:${port}`);
 });
 
+
 // Socket setup
 const io = socket(server);
 io.use(function (socket, next) {
   sessionMiddleware(socket.request, {}, next); // Wrap the express middleware
 });
 io.on("connection", function (socket) {
+  //socket.io.engine.id = socket.request.session.passport.user;
   const {
     socketModule
   } = require('./controllers/socket.js');

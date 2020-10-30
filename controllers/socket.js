@@ -17,8 +17,6 @@ const socketModule = function (io, socket, users, conversations) {
 		const thisUser = await users.findOne({
 			id: userId
 		});
-		console.log("new user");
-		console.log(userId)
 
 		socket.userId = thisUser.name;
 		activeUsers.add(thisUser.name);
@@ -42,6 +40,7 @@ const socketModule = function (io, socket, users, conversations) {
 				timestamp: moment().valueOf(),
 				room: room,
 				username: user.name,
+				activeUsers: io.sockets.adapter.rooms[room.id],
 			});
 		});
 
@@ -63,19 +62,7 @@ const socketModule = function (io, socket, users, conversations) {
 			return;
 		}
 		const user = await getCurrentUser();
-		
-		// if (vendors.some(e => e.Name === 'Magenic')) {
-		// 	/* vendors contains the element we're looking for */
-		// }
-
-		var found = false;  // TODO: make it pretty and faster
-		for(var i = 0; i < conversation.participants.length; i++) {
-			if (conversation.participants[i].id == user.id) {
-					found = true;
-					break;
-			}
-		}
-		if (!found) {
+		if (!conversation.participants.some(e => e.id === user.id)) {
 			return;
 		}
 
@@ -92,10 +79,15 @@ const socketModule = function (io, socket, users, conversations) {
 		const thisUser = await users.findOne({
 			id: userId
 		});
+
+		console.log(socket.id);
+
 		socket.broadcast.to(req.room).emit('message', {
 			username: 'System',
 			text: thisUser.name + ' has joined!',
-			timestamp: moment().valueOf()
+			timestamp: moment().valueOf(),
+			activeUsers: io.sockets.adapter.rooms[req.room],
+			room: req.room,
 		});
 
 		console.log(`new user: ${thisUser.name} connectedo to room: ` + req.room);
