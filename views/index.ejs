@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="style.css">
         <title>App</title>
     </head>
     <body>
@@ -24,7 +25,9 @@
           <button type="submit" id="addUserToConversationButton">Add new user to the conversation</button>
         </div>
 
-        <div class="container">
+        <br>
+
+        <!-- div class="container">
           <div class="inbox">
             <div class="inbox__people">
               <h4>Active users</h4>
@@ -42,6 +45,24 @@
               Enter
             </button>
           </form>
+        </div -->
+
+        <div class="mainContainer" id="mainContainer">
+          <div class="column left">
+            <div class="conversations" id="conversations"></div>
+          </div>
+          <div class="column right" onclick = "javascript:document.getElementById('input-group-field').focus();">
+            <div class="active-conversation-text" id="active-conversation-text"></div>
+            <div class="messages" id="messages"></div>
+            <form class="message-form" id="message-form">
+              <div class="input-group">
+                <input type="text" placeholder="Type message here" class="input-group-field" id="input-group-field" name="message">
+                <div class="input-group-button" id="input-group-button">
+                  <input type="submit" value="Send">
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>

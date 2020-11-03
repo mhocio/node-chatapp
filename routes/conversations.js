@@ -3,6 +3,7 @@ const {
 	checkAuthenticated,
 	checkNotAuthenticated
 } = require('../controllers/auth.js');
+const { decrypt } = require('../controllers/crypto.js');
 
 function Ex(status, name, message) {
   if (status < 0) {
@@ -22,6 +23,34 @@ module.exports = function (users, conversations) {
 			id: req.session.passport.user
 		});
 		res.send(user.conversations);
+	});
+
+	router.get('/:id', checkAuthenticated, async (req, res) => {
+		const {
+			id: conversationId,
+		} = req.params;
+		
+		const conversation = await conversations.findOne({
+			id: conversationId
+		});
+		if (!conversation) {
+			return;
+		}
+		const user = await users.findOne({
+			id: req.session.passport.user
+		});
+		if (!conversation.participants.some(e => e.id === user.id)) {
+			return;
+		}
+
+		if (conversation.messages)
+			conversation.messages.forEach(elem => {
+				if (elem.text && elem.text.iv) {
+					elem.text = decrypt(elem.text);
+				}
+			});
+
+		res.send(conversation);
 	});
 
 	router.put('/:conversation/adduser/:name', checkAuthenticated, async (req, res, next) => {

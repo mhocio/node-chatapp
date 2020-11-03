@@ -2,13 +2,21 @@ const socket = io();
 
 const inboxPeople = document.querySelector(".inbox__people");
 const inputField = document.querySelector(".message_form__input");
-const messageForm = document.querySelector(".message_form");
 const messageBox = document.querySelector(".messages__history");
 const fallback = document.querySelector(".fallback");
 const addUserToConversationButton = document.getElementById("addUserToConversationButton");
 
-//let userName = "";
-socket.emit("new user");
+conversations = [];
+messages = {};
+activeConversation = "";
+
+function appendMessageToMessagesDict(newMessageDiv, conversationId) {
+  if (!messages[conversationId]) {
+    messages[conversationId] = [newMessageDiv];
+  } else {
+    messages[conversationId].push(newMessageDiv);
+  }
+}
 
 socket.on('connect', async function () {
   async function getData(url) {
@@ -18,58 +26,83 @@ socket.on('connect', async function () {
   
   const rooms = await getData('/conversations');
   console.log(rooms);
+  updateConversationsList(rooms);
 
-  rooms.forEach(function (room) {
-    console.log(room);
+  rooms.forEach(async function (room) {
     socket.emit('joinRoom', {
       room: room.id,
     }, function (data) {
       console.log(data);
     });
+    const fetchedConversation = await getData('/conversations/' + room.id);
+    fetchedConversation.messages.forEach(mess => {
+      appendMessageToMessagesDict(createMessageDiv(mess.user, mess.text), room.id);
+    });
   });
 
+  //updateConversationsList(rooms);
+  console.log(conversations[0].id);
+  setTimeout(function() { changeActiveConversation(conversations[0].id); }, 1200);
 });
 
-const addToUsersBox = (userName) => {
-  if (!!document.querySelector(`.${userName}-userlist`)) {
-    return;
+function changeActiveConversation(conversation) {
+  if (document.getElementById(activeConversation)) {
+    document.getElementById(activeConversation).classList.remove("active-conversation");
+  }
+  if (document.getElementById(conversation)) {
+    document.getElementById(conversation).classList.add("active-conversation");
   }
 
-  const userBox = `
-    <div class="chat_ib ${userName}-userlist">
-      <h5>${userName}</h5>
-    </div>
-  `;
-  inboxPeople.innerHTML += userBox;
-};
+  activeConversation = conversation;
+  document.getElementById("active-conversation-text").innerHTML = activeConversation;
 
-const addNewMessage = ({ user, message }) => {
-  const time = new Date();
-  const formattedTime = time.toLocaleString("en-US", { hour: "numeric", minute: "numeric" });
+  document.getElementById("messages").innerHTML = '';
+  if (messages[conversation]) {
+    messages[conversation].forEach(function (message) {
+      document.getElementById("messages").appendChild(message);
+    });
+  }
 
-  const receivedMsg = `
-  <div class="incoming__message">
-    <div class="received__message">
-      <p>${message}</p>
-      <div class="message__info">
-        <span class="message__author">${user}</span>
-        <span class="time_date">${formattedTime}</span>
-      </div>
-    </div>
-  </div>`;
+  scrollSmoothToBottom('messages', 'false');
+}
 
-  const myMsg = `
-  <div class="outgoing__message">
-    <div class="sent__message">
-      <p>${message}</p>
-      <div class="message__info">
-        <span class="time_date">${formattedTime}</span>
-      </div>
-    </div>
-  </div>`;
+function updateConversationsList(rooms) {
+  conversations = rooms;
+  document.getElementById("conversations").innerHTML = '';
+  if (conversations[0]) {
+    changeActiveConversation(conversations[0].id);
+  }
 
-  messageBox.innerHTML += user === userName ? myMsg : receivedMsg;
-};
+  conversations.forEach(function (conversation) {
+    var newConversation = document.createElement('div');
+    newConversation.setAttribute("id", conversation.id);
+    var link = document.createElement('a');
+    link.setAttribute("id", conversation.id);
+    link.appendChild(document.createTextNode(conversation.id));
+    link.addEventListener('click', function () {
+      changeActiveConversation(conversation.id);
+    });
+    newConversation.appendChild(link);
+
+    document.getElementById("conversations").appendChild(newConversation);
+  });
+}
+
+document.getElementById("message-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const message = document.getElementById("input-group-field");
+  if (!message.value) {
+    return;
+  }
+  
+  socket.emit('message', {
+    text: message.value,
+    room: activeConversation,
+  });
+
+  message.value = '';
+});
 
 addUserToConversationButton.addEventListener("click", addUserToConversation);
 
@@ -96,55 +129,61 @@ function addUserToConversation() {
   });
 }
 
-messageForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (!inputField.value) {
-    return;
-  }
+function recieveMessage(room, message) {
 
-  // socket.emit("chat message", {
-  //   message: inputField.value,
-  //   nick: userName,
-  // });
+}
 
-  console.log(inputField.value);
-
-  const roomId = document.querySelector(".message_form__rooom");
-  
-  socket.emit('message', {
-    text: inputField.value,
-    room: roomId.value
-  });
-
-  roomId.value = "";
-  inputField.value = "";
-});
-
-inputField.addEventListener("keyup", () => {
-  socket.emit("typing", {
-    isTyping: inputField.value.length > 0,
-    nick: userName,
-  });
-});
-
-socket.on("new user", function (data) {
-  data.map((user) => addToUsersBox(user));
-});
-
-socket.on("user disconnected", function (userName) {
-  document.querySelector(`.${userName}-userlist`).remove();
-});
-
-/*socket.on("chat message", function (data) {
-  addNewMessage({ user: data.nick, message: data.message });
-});*/
+function createMessageDiv(messageSender, messageText) {
+  var newMessage = document.createElement('div');
+  newMessage.classList.add("message");
+  newMessage.appendChild(document.createTextNode('from:' + messageSender + ' message: ' + messageText));
+  return newMessage;
+}
 
 socket.on("message", function (data) {
   console.log(data);
-  //addNewMessage({ user: data.nick, message: data.message });
+  const messageText = data.text;
+  const messageSender = data.user;
+
+  var newMessage = createMessageDiv(messageSender, messageText);
+
+  if (activeConversation == data.room) {
+    document.getElementById("messages").appendChild(newMessage);
+    scrollSmoothToBottom('messages');
+  }
+
+  if (data.room) {
+    var c = conversations.find(x => x.id === data.room);
+    // console.log(c);
+    if (!c) {
+      return;
+    }
+
+    // if (!messages[c.id]) {
+    //   messages[c.id] = [newMessage];
+    // } else {
+    //   messages[c.id].push(newMessage);
+    // }
+    appendMessageToMessagesDict(newMessage, c.id);
+    console.log(messages);
+  }
 });
 
+function scrollSmoothToBottom(id, smooth="t") {
+  var div = document.getElementById(id);
+  if (smooth=="false" || smooth=="f") {
+    div.scrollTo({ top: div.scrollHeight});
+  } else {
+    div.scrollTo({ top: div.scrollHeight, behavior: 'smooth' });
+  }
+}
 
+// inputField.addEventListener("keyup", () => {
+//   socket.emit("typing", {
+//     isTyping: inputField.value.length > 0,
+//     nick: userName,
+//   });
+// });
 // socket.on("typing", function (data) {
 //   const { isTyping, nick } = data;
 

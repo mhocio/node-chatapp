@@ -1,0 +1,84 @@
+body {
+    margin-left: 5vh;
+    margin-right: 5vh;
+    margin-top: 3vh;
+}
+
+.mainContainer {
+    background: rgb(241, 241, 241);
+    display: table;
+    width: 100%;
+}
+
+.column {
+    display: table-cell;
+}
+
+.left {
+    vertical-align:top;
+    width: 200px;
+    background: rgb(211, 211, 211);
+}
+
+.right {
+    background: rgb(255, 255, 255);
+}
+
+.active-conversation-text {
+    text-align: center;
+    background-color: rgb(236, 236, 236);
+}
+
+.active-conversation {
+    font-weight: bold;
+}
+
+.messages {
+    height: 300px;
+}
+
+.message {
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+.conversations {
+    display: inline;
+}
+
+.messages {
+    overflow-y:auto; 
+	overflow-x:hidden;
+}
+
+.input-group {
+    display: table;
+    width: 100%;
+}
+
+.input-group>* {
+    display: table-cell;
+}
+
+.input-group-field {
+    width: 100%;
+}
+
+.message-form input[type="submit"] {
+    width: 100%;
+    background: #f8f8f8;
+    color: #282828;
+    padding: 0 20px;
+    border: none;
+}
+
+.message-form input[type="submit"]:hover {
+    color: #24b3a0;
+}
+
+.message-form input[type="text"] {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: #f8f8f8;
+}

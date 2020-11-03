@@ -1,5 +1,6 @@
 const moment = require("moment");
-const activeUsers = new Set();;
+const { encrypt, decrypt } = require('./crypto');
+const { v4: uuidv4 } = require('uuid');
 
 const socketModule = function (io, socket, users, conversations) {
 	console.log("Made socket connection");
@@ -12,21 +13,7 @@ const socketModule = function (io, socket, users, conversations) {
 		return thisUser;
 	}
 
-	socket.on("new user", async function (data) {
-		const userId = socket.request.session.passport.user;
-		const thisUser = await users.findOne({
-			id: userId
-		});
-
-		socket.userId = thisUser.name;
-		activeUsers.add(thisUser.name);
-		console.log(activeUsers);
-
-		io.emit("new user", [...activeUsers]);
-	});
-
 	socket.on("disconnect", async () => {
-		activeUsers.delete(socket.userId);
 		console.log("user disconnected");
 
 		const user = await getCurrentUser();
@@ -56,8 +43,10 @@ const socketModule = function (io, socket, users, conversations) {
 	// });
 
 	socket.on('message', async function (message) {
-		message.timestamp = moment().valueOf();
-		const conversation = await conversations.findOne({ id: message.room });
+		const timeOfMessage = moment().valueOf();
+		message.timestamp = timeOfMessage;
+		const conversationId = message.room;
+		const conversation = await conversations.findOne({ id: conversationId });
 		if (!conversation) {
 			return;
 		}
@@ -66,31 +55,54 @@ const socketModule = function (io, socket, users, conversations) {
 			return;
 		}
 
+		message.user = user.name;
+
+		// TODO: append a message to the conversation
+		conversations.update({
+				id: conversationId
+			}, {
+				$addToSet: {
+					"messages": {
+						id: uuidv4(),
+						timestamp: timeOfMessage,
+						user: user.name,
+						text: encrypt(message.text),
+						room: conversationId
+					}
+				}
+			},
+			(err, result) => {}
+		);
+
 		console.log("sending message...");
 		message.user = user.name;
 		io.to(message.room).emit('message', message);
 	});
 
+	// TODO: add last read for each user's conversation
+	// TODO: create GET:lastread in conversations to obtain the last message read by the user
+
+	// TODO: add a socket info after being added to a new conversartion
+
 	socket.on('joinRoom', async function (req, callback) {
-		// TODO: check if can connect
-		// i.e. check if user belongs to this conversation
+		const user = await getCurrentUser();
+		const conversation = await conversations.findOne({ id: req.room });
+		if (!conversation.participants.some(e => e.id === user.id)) {
+			return;
+			// TODO: remove conversation from user's conversation (some error had happened)
+		}
+
 		socket.join(req.room);
-		const userId = socket.request.session.passport.user;
-		const thisUser = await users.findOne({
-			id: userId
-		});
-
-		console.log(socket.id);
-
 		socket.broadcast.to(req.room).emit('message', {
 			username: 'System',
-			text: thisUser.name + ' has joined!',
+			text: user.name + ' has joined!',
 			timestamp: moment().valueOf(),
 			activeUsers: io.sockets.adapter.rooms[req.room],
 			room: req.room,
 		});
 
-		console.log(`new user: ${thisUser.name} connectedo to room: ` + req.room);
+		console.log(socket.id);
+		console.log(`new user: ${user.name} connectedo to room: ` + req.room);
 	});
 };
 
