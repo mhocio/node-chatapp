@@ -80,19 +80,19 @@ socket.on('connect', async function () {
   }
   
   console.log(conversations[0].id);
-  setTimeout(function() { changeActiveConversation(conversations[0].id, conversations[0].name); }, 1200);
+  setTimeout(function() { changeActiveConversation(conversations[0]); }, 1200);
 });
 
-function changeActiveConversation(conversationId, conversationName) {
+function changeActiveConversation(conversation) {
   if (document.getElementById(activeConversation.id)) {
     document.getElementById(activeConversation.id).classList.remove("active-conversation");
   }
-  if (document.getElementById(conversationId)) {
-    document.getElementById(conversationId).classList.add("active-conversation");
+  if (document.getElementById(conversation.id)) {
+    document.getElementById(conversation.id).classList.add("active-conversation");
   }
 
-  activeConversation.id = conversationId;
-  activeConversation.name = conversationName;
+  activeConversation.id = conversation.id;
+  activeConversation.name = conversation.name;
   if (activeConversation.name) {
     document.getElementById("active-conversation-text").innerHTML = activeConversation.name;
   } else {
@@ -100,8 +100,8 @@ function changeActiveConversation(conversationId, conversationName) {
   }
 
   document.getElementById("messages").innerHTML = '';
-  if (messages[conversationId]) {
-    messages[conversationId].forEach(function (message) {
+  if (messages[conversation.id]) {
+    messages[conversation.id].forEach(function (message) {
       document.getElementById("messages").appendChild(message);
     });
   }
@@ -113,7 +113,7 @@ function updateConversationsList(rooms) {
   conversations = rooms;
   document.getElementById("conversations").innerHTML = '';
   if (conversations[0]) {
-    changeActiveConversation(conversations[0].id, conversations[0].name);
+    changeActiveConversation(conversations[0]);
   }
 
   conversations.forEach(function (conversation) {
@@ -128,7 +128,7 @@ function updateConversationsList(rooms) {
       link.appendChild(document.createTextNode(conversation.id));
     }
     link.addEventListener('click', function () {
-      changeActiveConversation(conversation.id, conversation.name);
+      changeActiveConversation(conversation);
     });
     newConversation.appendChild(link);
 
