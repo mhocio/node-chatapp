@@ -20,16 +20,18 @@ const socketModule = function (io, socket, users, conversations) {
 		console.log(user);
 
 		// TODO: store active users in the DB?
-		user.conversations.forEach(function (room) {
-			socket.broadcast.to(room.id).emit('message', {
-				username: 'System',
-				text: user.name + ' has left!',
-				timestamp: moment().valueOf(),
-				room: room,
-				username: user.name,
-				activeUsers: io.sockets.adapter.rooms[room.id],
+		if (user.conversations) {
+			user.conversations.forEach(function (room) {
+				socket.broadcast.to(room.id).emit('message', {
+					username: 'System',
+					text: user.name + ' has left!',
+					timestamp: moment().valueOf(),
+					room: room,
+					username: user.name,
+					activeUsers: io.sockets.adapter.rooms[room.id],
+				});
 			});
-		});
+		}
 
 		io.emit("user disconnected", socket.userId);
 	});
@@ -87,7 +89,17 @@ const socketModule = function (io, socket, users, conversations) {
 	socket.on('joinRoom', async function (req, callback) {
 		const user = await getCurrentUser();
 		const conversation = await conversations.findOne({ id: req.room });
-		if (!conversation.participants.some(e => e.id === user.id)) {
+		if (!conversation || !conversation.participants.some(e => e.id === user.id)) {
+			console.log("remove converastion from user");
+			users.update({
+					id: user.id
+				}, {
+					$pull: {
+						conversations: { id: req.room }
+					}
+				},
+				(err, result) => {}
+			);
 			return;
 			// TODO: remove conversation from user's conversation (some error had happened)
 		}

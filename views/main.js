@@ -10,6 +10,33 @@ conversations = [];
 messages = {};
 activeConversation = "";
 
+function createNewConversation() {
+  const newConversationName = document.getElementById("newConversationName").value;
+  console.log(newConversationName);
+  fetch('/conversations/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept' : 'application/json',
+      },
+      body: JSON.stringify({ name: newConversationName })
+    })
+    .then((response) => {
+      if (response.ok) {
+        document.getElementById("newConversationName").value = '';
+        refreshConversationsList();
+        return response.json();
+      } else {
+        throw new Error(response.status);
+      }
+    })
+    .then(data => {
+    })
+    .catch(error => {
+      console.log(error);
+    });
+}
+
 function appendMessageToMessagesDict(newMessageDiv, conversationId) {
   if (!messages[conversationId]) {
     messages[conversationId] = [newMessageDiv];
@@ -18,29 +45,40 @@ function appendMessageToMessagesDict(newMessageDiv, conversationId) {
   }
 }
 
-socket.on('connect', async function () {
+async function refreshConversationsList() {
   async function getData(url) {
     const response = await fetch(url);
     return response.json();
   }
   
   const rooms = await getData('/conversations');
-  console.log(rooms);
+  updateConversationsList(rooms);
+}
+
+socket.on('connect', async function () {
+  async function getData(url) {
+    const response = await fetch(url);
+    return response.json();
+  }
+  const rooms = await getData('/conversations');
   updateConversationsList(rooms);
 
-  rooms.forEach(async function (room) {
-    socket.emit('joinRoom', {
-      room: room.id,
-    }, function (data) {
-      console.log(data);
+  if (rooms) {
+    rooms.forEach(async function (room) {
+      socket.emit('joinRoom', {
+        room: room.id,
+      }, function (data) {
+        console.log(data);
+      });
+      const fetchedConversation = await getData('/conversations/' + room.id);
+      if (fetchedConversation.messages) {
+        fetchedConversation.messages.forEach(mess => {
+          appendMessageToMessagesDict(createMessageDiv(mess.user, mess.text), room.id);
+        });
+      }
     });
-    const fetchedConversation = await getData('/conversations/' + room.id);
-    fetchedConversation.messages.forEach(mess => {
-      appendMessageToMessagesDict(createMessageDiv(mess.user, mess.text), room.id);
-    });
-  });
-
-  //updateConversationsList(rooms);
+  }
+  
   console.log(conversations[0].id);
   setTimeout(function() { changeActiveConversation(conversations[0].id); }, 1200);
 });
@@ -74,11 +112,12 @@ function updateConversationsList(rooms) {
   }
 
   conversations.forEach(function (conversation) {
+    console.log(conversation);
     var newConversation = document.createElement('div');
     newConversation.setAttribute("id", conversation.id);
     var link = document.createElement('a');
     link.setAttribute("id", conversation.id);
-    link.appendChild(document.createTextNode(conversation.id));
+    link.appendChild(document.createTextNode(conversation.name));
     link.addEventListener('click', function () {
       changeActiveConversation(conversation.id);
     });

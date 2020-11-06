@@ -111,6 +111,13 @@ module.exports = function (users, conversations) {
 	})
 
 	router.post('/', checkAuthenticated, async (req, res) => {
+		console.log("creating new conversation");
+		console.log(req);
+		console.log(req.body);
+		const {
+			name: newConversationName,
+		} = req.body;
+
 		const creatorId = req.session.passport.user;
 		const conversationId = uuidv4();
 		var newConversation = {
@@ -119,6 +126,7 @@ module.exports = function (users, conversations) {
 				id: creatorId
 			}],
 			owner: creatorId,
+			name: newConversationName
 		}
 
 		const createdConversation = await conversations.insert(newConversation);
@@ -133,7 +141,8 @@ module.exports = function (users, conversations) {
 				}, {
 					$addToSet: {
 						"conversations": {
-							id: conversationId
+							id: conversationId,
+							name: newConversationName,
 						}
 					}
 				},

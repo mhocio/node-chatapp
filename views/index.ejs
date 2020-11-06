@@ -15,7 +15,8 @@
             <button type="submit">Log Out</button>
         </form>
 
-        <form action="/conversations" method="POST">
+        <form id="createNewConversaionForm" onsubmit="event.preventDefault(); createNewConversation();">
+          <input type="name" name="name" id="newConversationName" placeholder="conversation name" required></input>
           <button type="submit">Create new conversation</button>
         </form>
 
