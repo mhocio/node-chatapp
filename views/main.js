@@ -8,7 +8,7 @@ const addUserToConversationButton = document.getElementById("addUserToConversati
 
 conversations = [];
 messages = {};
-activeConversation = "";
+activeConversation = {};
 
 function createNewConversation() {
   const newConversationName = document.getElementById("newConversationName").value;
@@ -80,23 +80,28 @@ socket.on('connect', async function () {
   }
   
   console.log(conversations[0].id);
-  setTimeout(function() { changeActiveConversation(conversations[0].id); }, 1200);
+  setTimeout(function() { changeActiveConversation(conversations[0].id, conversations[0].name); }, 1200);
 });
 
-function changeActiveConversation(conversation) {
-  if (document.getElementById(activeConversation)) {
-    document.getElementById(activeConversation).classList.remove("active-conversation");
+function changeActiveConversation(conversationId, conversationName) {
+  if (document.getElementById(activeConversation.id)) {
+    document.getElementById(activeConversation.id).classList.remove("active-conversation");
   }
-  if (document.getElementById(conversation)) {
-    document.getElementById(conversation).classList.add("active-conversation");
+  if (document.getElementById(conversationId)) {
+    document.getElementById(conversationId).classList.add("active-conversation");
   }
 
-  activeConversation = conversation;
-  document.getElementById("active-conversation-text").innerHTML = activeConversation;
+  activeConversation.id = conversationId;
+  activeConversation.name = conversationName;
+  if (activeConversation.name) {
+    document.getElementById("active-conversation-text").innerHTML = activeConversation.name;
+  } else {
+    document.getElementById("active-conversation-text").innerHTML = activeConversation.id;
+  }
 
   document.getElementById("messages").innerHTML = '';
-  if (messages[conversation]) {
-    messages[conversation].forEach(function (message) {
+  if (messages[conversationId]) {
+    messages[conversationId].forEach(function (message) {
       document.getElementById("messages").appendChild(message);
     });
   }
@@ -108,7 +113,7 @@ function updateConversationsList(rooms) {
   conversations = rooms;
   document.getElementById("conversations").innerHTML = '';
   if (conversations[0]) {
-    changeActiveConversation(conversations[0].id);
+    changeActiveConversation(conversations[0].id, conversations[0].name);
   }
 
   conversations.forEach(function (conversation) {
@@ -117,9 +122,13 @@ function updateConversationsList(rooms) {
     newConversation.setAttribute("id", conversation.id);
     var link = document.createElement('a');
     link.setAttribute("id", conversation.id);
-    link.appendChild(document.createTextNode(conversation.name));
+    if (conversation.name) {
+      link.appendChild(document.createTextNode(conversation.name));
+    } else {
+      link.appendChild(document.createTextNode(conversation.id));
+    }
     link.addEventListener('click', function () {
-      changeActiveConversation(conversation.id);
+      changeActiveConversation(conversation.id, conversation.name);
     });
     newConversation.appendChild(link);
 
@@ -137,7 +146,7 @@ document.getElementById("message-form").addEventListener("submit", (e) => {
   
   socket.emit('message', {
     text: message.value,
-    room: activeConversation,
+    room: activeConversation.id,
   });
 
   message.value = '';
@@ -186,7 +195,9 @@ socket.on("message", function (data) {
 
   var newMessage = createMessageDiv(messageSender, messageText);
 
-  if (activeConversation == data.room) {
+  console.log(activeConversation);
+
+  if (activeConversation.id == data.room) {
     document.getElementById("messages").appendChild(newMessage);
     scrollSmoothToBottom('messages');
   }
