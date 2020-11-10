@@ -117,9 +117,11 @@ function updateConversationsList(rooms) {
   }
 
   conversations.forEach(function (conversation) {
-    console.log(conversation);
+    //console.log(conversation);
     var newConversation = document.createElement('div');
     newConversation.setAttribute("id", conversation.id);
+    newConversation.classList += "conversation";
+    
     var link = document.createElement('a');
     link.setAttribute("id", conversation.id);
     if (conversation.name) {
@@ -127,10 +129,17 @@ function updateConversationsList(rooms) {
     } else {
       link.appendChild(document.createTextNode(conversation.id));
     }
-    link.addEventListener('click', function () {
+    newConversation.addEventListener('click', function () {
       changeActiveConversation(conversation);
     });
     newConversation.appendChild(link);
+
+    var addUserButton = document.createElement("button");
+    addUserButton.setAttribute("type", "button");
+    addUserButton.setAttribute("style", "float: right;")
+    addUserButton.classList += "btn btn-secondary btn-sm";
+    addUserButton.appendChild(document.createTextNode("Add user"));
+    newConversation.appendChild(addUserButton);
 
     document.getElementById("conversations").appendChild(newConversation);
   });
@@ -244,3 +253,7 @@ function scrollSmoothToBottom(id, smooth="t") {
 
 //   fallback.innerHTML = `<p>${nick} is typing...</p>`;
 // });
+
+function closeNav() {
+  document.getElementById("column-left").style.width = "50";
+}

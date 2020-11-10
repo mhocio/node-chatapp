@@ -1,72 +1,77 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="style.css">
-        <title>Chaaaty</title>
-    </head>
-    <body>
-        <h1>Hi <%= name %></h1>
-        <script>
-            var userName = "<%= name %>";
-        </script>
-        <form action="/auth/logout?_method=DELETE" method="POST">
-            <button type="submit">Log Out</button>
-        </form>
+<html lang="en">
 
-        <form id="createNewConversaionForm" onsubmit="event.preventDefault(); createNewConversation();">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <title>Chaaaty</title>
+</head>
+
+<body>
+  <div class="mainContainer">
+
+    <h1>Hi <%= name %></h1>
+    <script>
+      var userName = "<%= name %>";
+    </script>
+    <form action="/auth/logout?_method=DELETE" method="POST">
+      <button type="submit">Log Out</button>
+    </form>
+
+    <div id="addUserToConversation">
+      <input type="name" name="addUserId" id="addUserId" placeholder="user" required>
+      <input type="name" name="conversationId" id="conversationId" placeholder="conversation ID" required>
+      <button type="submit" id="addUserToConversationButton">Add new user to the conversation</button>
+    </div>
+    <br>
+
+    <div class="app-container" id="mainContainer">
+      <div class="column left" id="column-left">
+        <br>
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <form id="createNewConversaionForm" class="createNewConversaionForm" onsubmit="event.preventDefault(); createNewConversation();">
           <input type="name" name="name" id="newConversationName" placeholder="conversation name" required></input>
           <button type="submit">Create new conversation</button>
         </form>
-
-        <div id="addUserToConversation">
-          <input type="name" name="addUserId" id="addUserId" placeholder="user" required>
-          <input type="name" name="conversationId" id="conversationId" placeholder="conversation ID" required>
-          <button type="submit" id="addUserToConversationButton">Add new user to the conversation</button>
-        </div>
-
-        <br>
-
-        <!-- div class="container">
-          <div class="inbox">
-            <div class="inbox__people">
-              <h4>Active users</h4>
-            </div>
-            <div class="inbox__messages">
-              <div class="messages__history"></div>
-              <div class="fallback"></div>
+        <div class="conversations" id="conversations"></div>
+      </div>
+      <div class="column right" onclick="javascript:document.getElementById('input-group-field').focus();">
+        <div class="active-conversation-text" id="active-conversation-text"></div>
+        <div class="messages" id="messages"></div>
+        <form class="message-form" id="message-form">
+          <div class="input-group">
+            <input type="text" placeholder="Type message here" class="input-group-field" id="input-group-field"
+              name="message">
+            <div class="input-group-button" id="input-group-button">
+              <input type="submit" value="Send">
             </div>
           </div>
-    
-          <form class="message_form">
-            <input type="text" class="message_form__input" placeholder="Type a message" />
-            <input type="text" class="message_form__rooom" placeholder="Type which room" />
-            <button class="message_form__button" type="submit">
-              Enter
-            </button>
-          </form>
-        </div -->
+        </form>
+      </div>
+    </div>
+  
+  </div>
 
-        <div class="mainContainer" id="mainContainer">
-          <div class="column left">
-            <div class="conversations" id="conversations"></div>
-          </div>
-          <div class="column right" onclick = "javascript:document.getElementById('input-group-field').focus();">
-            <div class="active-conversation-text" id="active-conversation-text"></div>
-            <div class="messages" id="messages"></div>
-            <form class="message-form" id="message-form">
-              <div class="input-group">
-                <input type="text" placeholder="Type message here" class="input-group-field" id="input-group-field" name="message">
-                <div class="input-group-button" id="input-group-button">
-                  <input type="submit" value="Send">
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-    
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-        <script src="main.js"></script>
-      </body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <script src="main.js"></script>
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+  </script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+  </script>
+</body>
+
 </html>

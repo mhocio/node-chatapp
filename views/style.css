@@ -1,13 +1,17 @@
-body {
-    margin-left: 5vh;
-    margin-right: 5vh;
-    margin-top: 3vh;
+html,body {
+    height: 100%;
 }
 
 .mainContainer {
-    background: rgb(241, 241, 241);
+    height: 100%;
+}
+
+.app-container {
+    background: rgb(255, 255, 255);
     display: table;
     width: 100%;
+    padding-left: 5vw;
+    padding-right: 5vw;
 }
 
 .column {
@@ -15,13 +19,23 @@ body {
 }
 
 .left {
-    vertical-align:top;
-    width: 200px;
-    background: rgb(211, 211, 211);
+    position: relative;
+    vertical-align: top;
+    width: 30%;
+    background: rgb(255, 255, 255);
 }
 
+.app-container .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+    color: #818181;
+  }
+
 .right {
-    background: rgb(255, 255, 255);
+    background: rgb(248, 248, 248);
 }
 
 .active-conversation-text {
@@ -30,7 +44,7 @@ body {
 }
 
 .active-conversation {
-    font-weight: bold;
+    background-color: rgb(159, 238, 208) !important;
 }
 
 .messages {
@@ -46,9 +60,23 @@ body {
     display: inline;
 }
 
+.conversation {
+    border: 1px solid rgb(48, 140, 143);
+    background-color: whitesmoke;
+    padding-top: 1px;
+    padding: 7px;
+    cursor: pointer;
+}
+
 .messages {
-    overflow-y:auto; 
-	overflow-x:hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.createNewConversaionForm {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
 }
 
 .input-group {
@@ -67,7 +95,6 @@ body {
 .message-form input[type="submit"] {
     width: 100%;
     background: #f8f8f8;
-    color: #282828;
     padding: 0 20px;
     border: none;
 }
@@ -80,5 +107,6 @@ body {
     border: none;
     box-shadow: none;
     border-radius: 0;
-    background: #f8f8f8;
+    color: white;
+    background: #000000;
 }

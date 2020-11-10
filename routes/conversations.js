@@ -85,7 +85,7 @@ module.exports = function (users, conversations) {
 				}, {
 					$addToSet: {
 						"participants": {
-							id: newParticipantId
+							id: newParticipantId,
 						}
 					}
 				},
@@ -96,7 +96,8 @@ module.exports = function (users, conversations) {
 				}, {
 					$addToSet: {
 						"conversations": {
-							id: conversationId
+							id: conversationId,
+							name: conversation.name
 						}
 					}
 				},
