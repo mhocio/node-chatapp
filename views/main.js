@@ -259,23 +259,6 @@ function closeNav() {
   document.getElementById("column-left").style.width = "50";
 }
 
-function addUserToConversation(addUserId, conversationId) {
-  fetch(`/conversations/${conversationId}/adduser/${addUserId}`, {
-    method: 'PUT',
-  }).then((response) => {
-    console.log(response);
-    // if (response.ok) {
-    //     return response.json();
-    // } else {
-    //     throw new Error(response);
-    // }
-  }).then((data) => {
-    console.log(data);
-  }).catch (error => {
-    console.log(error);
-  });
-}
-
 $('#exampleModal').on('show.bs.modal', function (event) {
   var button = $(event.relatedTarget);
   // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
@@ -284,8 +267,30 @@ $('#exampleModal').on('show.bs.modal', function (event) {
 
   console.log(button.data('conversation-id'));
 
+  function addUserToConversation(usernameToAdd, conversationId, conversationName) {
+    fetch(`/conversations/${conversationId}/adduser/${usernameToAdd}`, {
+      method: 'PUT',
+    }).then((response) => {
+      console.log(response);
+      if (response.ok) {
+          return response.json();
+      } else {
+          throw new Error(response);
+      }
+    }).then((data) => {
+      if (data == "sucess") {
+        modal.modal('hide');
+        alert(`${usernameToAdd} successfully added to ${conversationName}.`);
+      }
+      console.log(data);
+    }).catch (error => {
+      alert(`Some error happened. Make sure user with name ${usernameToAdd} exists.`);
+      console.log(error);
+    });
+  }
+
   document.getElementById("addNewUserToConversationForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    addUserToConversation(document.getElementById("username-to-add").value, button.data('conversation-id'));
+    addUserToConversation(document.getElementById("username-to-add").value, button.data('conversation-id'), button.data('conversation-name'));
   });
 });
