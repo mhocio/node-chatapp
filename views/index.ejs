@@ -24,11 +24,11 @@
       <button type="submit">Log Out</button>
     </form>
 
-    <div id="addUserToConversation">
+    <!--div id="addUserToConversation">
       <input type="name" name="addUserId" id="addUserId" placeholder="user" required>
       <input type="name" name="conversationId" id="conversationId" placeholder="conversation ID" required>
       <button type="submit" id="addUserToConversationButton">Add new user to the conversation</button>
-    </div>
+    </div-->
     <br>
 
     <div class="app-container" id="mainContainer">
@@ -58,8 +58,32 @@
   
   </div>
 
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Add new user</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="addNewUserToConversationForm">
+          <div class="modal-body">
+              <div class="form-group">
+                <label for="username-to-add" class="col-form-label">Username</label>
+                <input type="text" class="form-control" id="username-to-add" placeholder="user" required>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" id="addUserToConversationButton">Add user</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-  <script src="main.js"></script>
 
   <!-- Optional JavaScript -->
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -72,6 +96,7 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
     integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
   </script>
+  <script src="main.js"></script>
 </body>
 
 </html>

@@ -4,7 +4,6 @@ const inboxPeople = document.querySelector(".inbox__people");
 const inputField = document.querySelector(".message_form__input");
 const messageBox = document.querySelector(".messages__history");
 const fallback = document.querySelector(".fallback");
-const addUserToConversationButton = document.getElementById("addUserToConversationButton");
 
 conversations = [];
 messages = {};
@@ -134,13 +133,40 @@ function updateConversationsList(rooms) {
     });
     newConversation.appendChild(link);
 
-    var addUserButton = document.createElement("button");
-    addUserButton.setAttribute("type", "button");
-    addUserButton.setAttribute("style", "float: right;")
-    addUserButton.classList += "btn btn-secondary btn-sm";
-    addUserButton.appendChild(document.createTextNode("Add user"));
-    newConversation.appendChild(addUserButton);
+    var dropdown = document.createElement("div");
+    dropdown.classList += "dropdown";
+    dropdown.setAttribute("style", "float: right;");
 
+    var threeDotsButton = document.createElement("button");
+    threeDotsButton.setAttribute("type", "button");
+    threeDotsButton.setAttribute("style", "border-style: none !important; color: black;");
+    threeDotsButton.setAttribute("data-toggle", "dropdown");
+    threeDotsButton.setAttribute("aria-haspopup", "true");
+    threeDotsButton.setAttribute("aria-expanded", "false");
+    threeDotsButton.setAttribute("id", "conversationMenuDotsButton");
+    threeDotsButton.classList += "btn btn-secondary btn-sm bg-transparent";
+    threeDotsButton.innerHTML = "&#8942;";
+
+    var dropdownMenu = document.createElement("div");
+    dropdownMenu.setAttribute("aria-labelledby", "conversationMenuDotsButton");
+    dropdownMenu.classList += "dropdown-menu";
+
+    var addUserButton = document.createElement("button");
+    addUserButton.setAttribute("data-toggle", "modal");
+    addUserButton.setAttribute("data-target", "#exampleModal");
+    addUserButton.setAttribute("data-conversation-id", `${conversation.id}`);
+    if (conversation.name) {
+      addUserButton.setAttribute("data-conversation-name", `${conversation.name}`);
+    } else {
+      addUserButton.setAttribute("data-conversation-name", `${conversation.id}`);
+    }
+    addUserButton.classList += "dropdown-item";
+    addUserButton.innerHTML = "Add User";
+    dropdownMenu.appendChild(addUserButton);
+
+    dropdown.appendChild(threeDotsButton);
+    dropdown.appendChild(dropdownMenu);
+    newConversation.appendChild(dropdown);
     document.getElementById("conversations").appendChild(newConversation);
   });
 }
@@ -160,31 +186,6 @@ document.getElementById("message-form").addEventListener("submit", (e) => {
 
   message.value = '';
 });
-
-addUserToConversationButton.addEventListener("click", addUserToConversation);
-
-function addUserToConversation() {
-  const addUserId = document.getElementById("addUserId");
-  const conversationId = document.getElementById("conversationId");
-
-  fetch(`/conversations/${conversationId.value}/adduser/${addUserId.value}`, {
-    method: 'PUT',
-  }).then((response) => {
-    addUserId.value = '';
-    conversationId.value = '';
-
-    console.log(response);
-    // if (response.ok) {
-    //     return response.json();
-    // } else {
-    //     throw new Error(response);
-    // }
-  }).then((data) => {
-    console.log(data);
-  }).catch (error => {
-    console.log(error);
-  });
-}
 
 function recieveMessage(room, message) {
 
@@ -257,3 +258,34 @@ function scrollSmoothToBottom(id, smooth="t") {
 function closeNav() {
   document.getElementById("column-left").style.width = "50";
 }
+
+function addUserToConversation(addUserId, conversationId) {
+  fetch(`/conversations/${conversationId}/adduser/${addUserId}`, {
+    method: 'PUT',
+  }).then((response) => {
+    console.log(response);
+    // if (response.ok) {
+    //     return response.json();
+    // } else {
+    //     throw new Error(response);
+    // }
+  }).then((data) => {
+    console.log(data);
+  }).catch (error => {
+    console.log(error);
+  });
+}
+
+$('#exampleModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget);
+  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+  var modal = $(this);
+  modal.find('.modal-title').text('Add user to ' + button.data('conversation-name'));
+
+  console.log(button.data('conversation-id'));
+
+  document.getElementById("addNewUserToConversationForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    addUserToConversation(document.getElementById("username-to-add").value, button.data('conversation-id'));
+  });
+});
