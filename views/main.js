@@ -30,6 +30,11 @@ function createNewConversation() {
       }
     })
     .then(data => {
+      socket.emit('joinRoom', {
+        room: data.id,
+      }, function (data) {
+        console.log(data);
+      });
     })
     .catch(error => {
       console.log(error);
@@ -267,25 +272,21 @@ $('#exampleModal').on('show.bs.modal', function (event) {
 
   console.log(button.data('conversation-id'));
 
-  function addUserToConversation(usernameToAdd, conversationId, conversationName) {
+  async function addUserToConversation(usernameToAdd, conversationId, conversationName) {
     fetch(`/conversations/${conversationId}/adduser/${usernameToAdd}`, {
       method: 'PUT',
     }).then((response) => {
-      console.log(response);
-      if (response.ok) {
-          return response.json();
-      } else {
-          throw new Error(response);
-      }
-    }).then((data) => {
-      if (data == "sucess") {
-        modal.modal('hide');
-        alert(`${usernameToAdd} successfully added to ${conversationName}.`);
-      }
-      console.log(data);
-    }).catch (error => {
-      alert(`Some error happened. Make sure user with name ${usernameToAdd} exists.`);
-      console.log(error);
+      response.json().then(data => {
+        if (response.ok) {
+          modal.modal('hide');
+          alert(`${usernameToAdd} successfully added to ${conversationName}.`);
+        } else {
+          throw new Error(data);
+        }
+      }).catch (error => {
+        alert(`${error}`);
+        console.log(error);
+      });;
     });
   }
 

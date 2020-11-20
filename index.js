@@ -76,10 +76,8 @@ app.use((error, req, res, next) => {
   if (error.status) {
     status = error.status;
   }
-  res.status(status).send({
-    error: error.name,
-    errorMessage: error.message,
-  });
+  console.log(error);
+  res.status(status).json(error.message);
 });
 
 // INIT SERVER

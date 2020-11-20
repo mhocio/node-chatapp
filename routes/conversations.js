@@ -5,7 +5,7 @@ const {
 } = require('../controllers/auth.js');
 const { decrypt } = require('../controllers/crypto.js');
 
-function Ex(status, name, message) {
+function Ex(status, message, name) {
   if (status < 0) {
     this.status = 500;
   } else {
@@ -76,7 +76,7 @@ module.exports = function (users, conversations) {
 				throw new Ex(404, "no such conversation", "error");
 			}
 			if (creatorId != conversation.owner) {
-				throw new Ex(403, "not your conversation", "denied");
+				throw new Ex(403, "you are not the owner of this conversation", "denied");
 			}
 
 			// need to change to atomic operation
@@ -106,7 +106,6 @@ module.exports = function (users, conversations) {
 
 			res.json('sucess');
 		} catch (error) {
-			console.log(error);
 			next(error);
 		}
 	})
