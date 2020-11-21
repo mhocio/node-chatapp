@@ -14,10 +14,10 @@ const socketModule = function (io, socket, users, conversations) {
 	}
 
 	socket.on("disconnect", async () => {
-		console.log("user disconnected");
+		//console.log("user disconnected");
 
 		const user = await getCurrentUser();
-		console.log(user);
+		//console.log(user);
 
 		// TODO: store active users in the DB?
 		if (user.conversations) {
@@ -113,8 +113,8 @@ const socketModule = function (io, socket, users, conversations) {
 			room: req.room,
 		});
 
-		console.log(socket.id);
-		console.log(`new user: ${user.name} connectedo to room: ` + req.room);
+		//console.log(socket.id);
+		//console.log(`new user: ${user.name} connectedo to room: ` + req.room);
 	});
 };
 

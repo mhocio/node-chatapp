@@ -265,6 +265,7 @@ function closeNav() {
 }
 
 $('#exampleModal').on('show.bs.modal', function (event) {
+  event.stopPropagation();
   var button = $(event.relatedTarget);
   // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
   var modal = $(this);
@@ -273,6 +274,7 @@ $('#exampleModal').on('show.bs.modal', function (event) {
   console.log(button.data('conversation-id'));
 
   async function addUserToConversation(usernameToAdd, conversationId, conversationName) {
+    console.log("adding...");
     fetch(`/conversations/${conversationId}/adduser/${usernameToAdd}`, {
       method: 'PUT',
     }).then((response) => {
@@ -286,12 +288,40 @@ $('#exampleModal').on('show.bs.modal', function (event) {
       }).catch (error => {
         alert(`${error}`);
         console.log(error);
-      });;
+      });
     });
-  }
+  };
+
+  // https://stackoverflow.com/a/9251864/13753053
+  var old_element = document.getElementById("addNewUserToConversationForm");
+  var new_element = old_element.cloneNode(true);
+  old_element.parentNode.replaceChild(new_element, old_element);
 
   document.getElementById("addNewUserToConversationForm").addEventListener("submit", (e) => {
     e.preventDefault();
     addUserToConversation(document.getElementById("username-to-add").value, button.data('conversation-id'), button.data('conversation-name'));
   });
 });
+
+async function subscribe() {
+  let response = await fetch('/conversations/private/newconversations');
+
+  if (response.status == 502) {
+    await subscribe();
+  } else if (response.status != 200) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await subscribe();
+  } else {
+    var data = await response.json();
+    console.log(data);
+    refreshConversationsList();
+    data.forEach(c => {
+      socket.emit('joinRoom', {
+        room: c.id,
+      });
+    });
+    await subscribe();
+  }
+}
+
+subscribe();

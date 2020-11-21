@@ -25,32 +25,36 @@ module.exports = function (users, conversations) {
 		res.send(user.conversations);
 	});
 
-	router.get('/:id', checkAuthenticated, async (req, res) => {
-		const {
-			id: conversationId,
-		} = req.params;
-		
-		const conversation = await conversations.findOne({
-			id: conversationId
-		});
-		if (!conversation) {
-			return;
-		}
-		const user = await users.findOne({
-			id: req.session.passport.user
-		});
-		if (!conversation.participants.some(e => e.id === user.id)) {
-			return;
-		}
-
-		if (conversation.messages)
-			conversation.messages.forEach(elem => {
-				if (elem.text && elem.text.iv) {
-					elem.text = decrypt(elem.text);
-				}
+	router.get('/:id', checkAuthenticated, async (req, res, next) => {
+		try {
+			const {
+				id: conversationId,
+			} = req.params;
+			
+			const conversation = await conversations.findOne({
+				id: conversationId
 			});
+			if (!conversation) {
+				throw new Ex(404, "no such conversation", "error");
+			}
+			const user = await users.findOne({
+				id: req.session.passport.user
+			});
+			if (!conversation.participants.some(e => e.id === user.id)) {
+				throw new Ex(403, "you are not in this conversation", "error");
+			}
 
-		res.send(conversation);
+			if (conversation.messages)
+				conversation.messages.forEach(elem => {
+					if (elem.text && elem.text.iv) {
+						elem.text = decrypt(elem.text);
+					}
+				});
+
+			res.send(conversation);
+		} catch (error) {
+			next(error);
+		}
 	});
 
 	router.put('/:conversation/adduser/:name', checkAuthenticated, async (req, res, next) => {
@@ -76,7 +80,10 @@ module.exports = function (users, conversations) {
 				throw new Ex(404, "no such conversation", "error");
 			}
 			if (creatorId != conversation.owner) {
-				throw new Ex(403, "you are not the owner of this conversation", "denied");
+				throw new Ex(401, "you are not the owner of this conversation", "denied");
+			}
+			if (conversation.participants.find(o => o.id === newParticipantId)) {
+				throw new Ex(403, "user already added before", "denied");
 			}
 
 			// need to change to atomic operation
@@ -104,11 +111,53 @@ module.exports = function (users, conversations) {
 				(err, result) => {}
 			);
 
+			users.update({
+				id: newParticipantId
+			}, {
+				$addToSet: {
+					"newConversations": {
+						id: conversationId,
+						name: conversation.name
+					}
+				}
+			},
+			(err, result) => {}
+		);
+
 			res.json('sucess');
 		} catch (error) {
 			next(error);
 		}
-	})
+	});
+
+	// router.get('/', checkAuthenticated, async (req, res) => {
+	// 	const user = await users.findOne({
+	// 		id: req.session.passport.user
+	// 	});
+	// 	res.send(user.conversations);
+	// });
+
+	router.get('/private/newconversations', checkAuthenticated, async (req, res) => {
+		console.log("newconversations");
+		const userId = req.session.passport.user;
+		const thisUser = await users.findOne({
+			id: userId
+		});
+
+		if (!thisUser.newConversations) {
+			return res.sendStatus(204);
+		}
+
+		users.update({
+			id: userId
+		}, {
+			$unset:	{newConversations:""}
+		},
+			false, true
+		);
+
+		res.send(thisUser.newConversations);
+	});
 
 	router.post('/', checkAuthenticated, async (req, res) => {
 		console.log("creating new conversation");
