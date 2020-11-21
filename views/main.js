@@ -31,7 +31,7 @@ function createNewConversation() {
     })
     .then(data => {
       joinConversation(data);
-      sortConversations();
+      //sortConversations();
       // socket.emit('joinRoom', {
       //   room: data.id,
       // }, function (data) {
@@ -80,6 +80,7 @@ async function joinConversation(conversation) {
   } else {
     c.lastmessage = {"timestamp":0};
   }
+  sortConversations();
 }
 
 socket.on('connect', async function () {
@@ -372,7 +373,7 @@ async function subscribe() {
       // });
       joinConversation(conv);
     });
-    sortConversations();
+    //sortConversations();
     await subscribe();
   }
 }
