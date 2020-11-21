@@ -30,11 +30,13 @@ function createNewConversation() {
       }
     })
     .then(data => {
-      socket.emit('joinRoom', {
-        room: data.id,
-      }, function (data) {
-        console.log(data);
-      });
+      joinConversation(data);
+      sortConversations();
+      // socket.emit('joinRoom', {
+      //   room: data.id,
+      // }, function (data) {
+      //   console.log(data);
+      // });
     })
     .catch(error => {
       console.log(error);
@@ -49,42 +51,52 @@ function appendMessageToMessagesDict(newMessageDiv, conversationId) {
   }
 }
 
+async function getData(url) {
+  const response = await fetch(url);
+  return response.json();
+}
+
 async function refreshConversationsList() {
-  async function getData(url) {
-    const response = await fetch(url);
-    return response.json();
+  const convs = await getData('/conversations');
+  updateConversationsList(convs);
+}
+
+async function joinConversation(conversation) {
+  console.log("joining...");
+  socket.emit('joinRoom', {
+    room: conversation.id,
+  }, function (data) {
+    //console.log(data);
+  });
+  const fetchedConversation = await getData('/conversations/' + conversation.id);
+  var c = conversations.find(c => c.id === conversation.id);
+  //console.log(c);
+  if (fetchedConversation.messages) {
+    fetchedConversation.messages.forEach(mess => {
+      appendMessageToMessagesDict(createMessageDiv(mess), conversation.id);
+    });
+    //console.log(fetchedConversation.messages[fetchedConversation.messages.length - 1]);
+    c.lastmessage = fetchedConversation.messages[fetchedConversation.messages.length - 1];
+  } else {
+    c.lastmessage = {"timestamp":0};
   }
-  
-  const rooms = await getData('/conversations');
-  updateConversationsList(rooms);
 }
 
 socket.on('connect', async function () {
-  async function getData(url) {
-    const response = await fetch(url);
-    return response.json();
-  }
   const rooms = await getData('/conversations');
   updateConversationsList(rooms);
 
   if (rooms) {
     rooms.forEach(async function (room) {
-      socket.emit('joinRoom', {
-        room: room.id,
-      }, function (data) {
-        console.log(data);
-      });
-      const fetchedConversation = await getData('/conversations/' + room.id);
-      if (fetchedConversation.messages) {
-        fetchedConversation.messages.forEach(mess => {
-          appendMessageToMessagesDict(createMessageDiv(mess.user, mess.text), room.id);
-        });
-      }
+      await joinConversation(room);
     });
   }
+  console.log("sort connect");
+  sortConversations();
   
   console.log(conversations[0].id);
-  setTimeout(function() { changeActiveConversation(conversations[0]); }, 1200);
+  setTimeout(function() { changeActiveConversation(conversations[0]); sortConversations();}, 1200);
+  //changeActiveConversation(conversations[0]);
 });
 
 function changeActiveConversation(conversation) {
@@ -113,16 +125,8 @@ function changeActiveConversation(conversation) {
   scrollSmoothToBottom('messages', 'false');
 }
 
-function updateConversationsList(rooms) {
-  conversations = rooms;
-  document.getElementById("conversations").innerHTML = '';
-  if (conversations[0]) {
-    changeActiveConversation(conversations[0]);
-  }
-
-  conversations.forEach(function (conversation) {
-    //console.log(conversation);
-    var newConversation = document.createElement('div');
+function renderConversation(conversation) {
+  var newConversation = document.createElement('div');
     newConversation.setAttribute("id", conversation.id);
     newConversation.classList += "conversation";
     
@@ -172,7 +176,52 @@ function updateConversationsList(rooms) {
     dropdown.appendChild(threeDotsButton);
     dropdown.appendChild(dropdownMenu);
     newConversation.appendChild(dropdown);
-    document.getElementById("conversations").appendChild(newConversation);
+    return newConversation;
+}
+
+function sortConversations() {
+  let ac = null;
+  if (activeConversation) {
+    ac = activeConversation;
+  }
+
+  console.log("inside SORTING");
+  console.log(conversations);
+  if (conversations[0] && conversations[0].lastmessage && conversations[0].lastmessage.timestamp) {
+    console.log("sorting...!!!!!!!");
+    conversations = conversations.sort(function(a, b) {
+      return b.lastmessage.timestamp - a.lastmessage.timestamp;
+    });
+  }
+  document.getElementById("conversations").innerHTML = '';
+  conversations.forEach(function (conversation) {
+    document.getElementById("conversations").appendChild(renderConversation(conversation));
+  });
+
+  if (ac) {
+    changeActiveConversation(ac);
+  }
+}
+
+function updateConversationsList(convs) {
+  console.log(conversations);
+  console.log(convs);
+
+  // TODO: preserve lastmessage.timestamp
+  convs.forEach(convToAdd => {
+    if (!conversations.some(function(o){return o.id === convToAdd.id;})) {
+      conversations.push(convToAdd);
+    }
+  });
+  //conversations = convs;
+
+  document.getElementById("conversations").innerHTML = '';
+  if (conversations[0]) {
+    changeActiveConversation(conversations[0]);
+  }
+
+  conversations.forEach(function (conversation) {
+    document.getElementById("conversations").appendChild(renderConversation(conversation));
   });
 }
 
@@ -196,19 +245,19 @@ function recieveMessage(room, message) {
 
 }
 
-function createMessageDiv(messageSender, messageText) {
+//function createMessageDiv(messageSender, messageText) {
+  function createMessageDiv(message) {
   var newMessage = document.createElement('div');
   newMessage.classList.add("message");
-  newMessage.appendChild(document.createTextNode('from:' + messageSender + ' message: ' + messageText));
+  newMessage.appendChild(document.createTextNode('from:' + message.user + ' message: ' + message.text));
   return newMessage;
 }
 
 socket.on("message", function (data) {
   console.log(data);
-  const messageText = data.text;
-  const messageSender = data.user;
-
-  var newMessage = createMessageDiv(messageSender, messageText);
+  // const messageText = data.text;
+  // const messageSender = data.user;
+  var newMessage = createMessageDiv(data);
 
   console.log(activeConversation);
 
@@ -219,6 +268,7 @@ socket.on("message", function (data) {
 
   if (data.room) {
     var c = conversations.find(x => x.id === data.room);
+    c.lastmessage = data;
     // console.log(c);
     if (!c) {
       return;
@@ -230,6 +280,7 @@ socket.on("message", function (data) {
     //   messages[c.id].push(newMessage);
     // }
     appendMessageToMessagesDict(newMessage, c.id);
+    sortConversations();
     console.log(messages);
   }
 });
@@ -315,11 +366,13 @@ async function subscribe() {
     var data = await response.json();
     console.log(data);
     refreshConversationsList();
-    data.forEach(c => {
-      socket.emit('joinRoom', {
-        room: c.id,
-      });
+    data.forEach(conv => {
+      // socket.emit('joinRoom', {
+      //   room: c.id,
+      // });
+      joinConversation(conv);
     });
+    sortConversations();
     await subscribe();
   }
 }
