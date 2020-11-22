@@ -3,6 +3,7 @@ const passport = require('passport');
 const flash = require('express-flash');
 const session = require('express-session');
 const methodOverride = require('method-override');
+var helmet = require('helmet');
 const socket = require("socket.io");
 const {
   checkAuthenticated,
@@ -25,6 +26,16 @@ initializePassport(
 
 const app = express();
 app.use(express.json());
+app.use(helmet.dnsPrefetchControl());
+app.use(helmet.expectCt());
+app.use(helmet.frameguard());
+app.use(helmet.hidePoweredBy());
+app.use(helmet.hsts());
+app.use(helmet.ieNoOpen());
+app.use(helmet.noSniff());
+app.use(helmet.permittedCrossDomainPolicies());
+app.use(helmet.referrerPolicy());
+app.use(helmet.xssFilter());
 
 app.set('view-engine', 'ejs');
 app.use(express.urlencoded({
@@ -53,7 +64,6 @@ var sessionMiddleware = session(sess);
 app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
-
 app.use(methodOverride('_method'));
 app.use(express.static("views"));
 
