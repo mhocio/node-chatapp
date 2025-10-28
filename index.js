@@ -26,16 +26,10 @@ initializePassport(
 
 const app = express();
 app.use(express.json());
-app.use(helmet.dnsPrefetchControl());
-app.use(helmet.expectCt());
-app.use(helmet.frameguard());
-app.use(helmet.hidePoweredBy());
-app.use(helmet.hsts());
-app.use(helmet.ieNoOpen());
-app.use(helmet.noSniff());
-app.use(helmet.permittedCrossDomainPolicies());
-app.use(helmet.referrerPolicy());
-app.use(helmet.xssFilter());
+
+// Use helmet's default security headers. Calling individual feature
+// methods can fail across helmet major versions (some helpers were removed).
+app.use(helmet());
 
 app.set('view-engine', 'ejs');
 app.use(express.urlencoded({
