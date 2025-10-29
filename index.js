@@ -29,7 +29,29 @@ app.use(express.json());
 
 // Use helmet's default security headers. Calling individual feature
 // methods can fail across helmet major versions (some helpers were removed).
-app.use(helmet());
+// Configure Helmet and Content Security Policy to allow required external CDNs and
+// a small amount of inline script for the app. This keeps most protections but
+// allows the client scripts loaded from trusted CDNs and the inline `userName`
+// assignment used in `index.ejs`.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdnjs.cloudflare.com",
+        "https://code.jquery.com",
+        "https://stackpath.bootstrapcdn.com",
+        "'unsafe-inline'" // used for small inline script and inline handlers in development
+      ],
+      styleSrc: ["'self'", "https://stackpath.bootstrapcdn.com", "'unsafe-inline'"],
+  connectSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://code.jquery.com", "https://stackpath.bootstrapcdn.com"],
+      imgSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  }
+}));
 
 app.set('view-engine', 'ejs');
 app.use(express.urlencoded({
@@ -37,23 +59,37 @@ app.use(express.urlencoded({
 }));
 app.use(flash());
 
-sess = {
+const MongoStore = require('connect-mongo');
+
+// Build the session options object
+let sess = {
   secret: process.env.SESSION_SECRET,
   cookie: {
     maxAge: 86400000
   },
   resave: false,
   saveUninitialized: true,
-  store: new(require("connect-mongo")(session))({
-    url: process.env.MONGO_SESSIONS_URI
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_SESSIONS_URI
   })
 };
-// If secure is set, and you access your site over HTTP, the cookie will not be set
-if (process.env.PROTOCOL === 'HTTPS') {
-  app.set('trust proxy', 1) // trust first proxy
-  sess.cookie.secure = true // serve secure cookies
+
+// Only set secure cookies when PROTOCOL explicitly indicates HTTPS (case-insensitive)
+// AND we're running in production. During local development (NODE_ENV !== 'production')
+// we should not set secure cookies even if PROTOCOL is set to 'HTTPS' in the env file,
+// because the browser will refuse to set them over plain HTTP and auth will fail.
+const isHttps = process.env.PROTOCOL && String(process.env.PROTOCOL).toLowerCase() === 'https';
+const isProd = process.env.NODE_ENV && String(process.env.NODE_ENV).toLowerCase() === 'production';
+if (isHttps && isProd) {
+  app.set('trust proxy', 1); // trust first proxy
+  sess.cookie.secure = true; // serve secure cookies only over HTTPS in production
+} else {
+  sess.cookie.secure = false; // allow cookies over HTTP for development/local runs
 }
-var sessionMiddleware = session(sess);
+
+console.log('Session config: cookie.secure=' + sess.cookie.secure + ' PROTOCOL=' + process.env.PROTOCOL + ' NODE_ENV=' + process.env.NODE_ENV);
+
+const sessionMiddleware = session(sess);
 
 app.use(sessionMiddleware);
 app.use(passport.initialize());
@@ -73,6 +109,17 @@ app.use('/conversations', conversationsRoute);
 
 const authRoute = require('./routes/auth.js')(passport, '/auth', users);
 app.use('/auth', authRoute);
+
+// Debug route: returns session and user info for the currently authenticated user.
+// Only available when logged in (uses checkAuthenticated).
+app.get('/debug-session', checkAuthenticated, async (req, res) => {
+  try {
+    const user = await users.findOne({ id: req.session.passport.user });
+    res.json({ session: req.session, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Error middleware
 app.use((error, req, res, next) => {

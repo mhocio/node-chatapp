@@ -35,8 +35,8 @@
       <div class="column left" id="column-left">
         <br>
         <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-        <form id="createNewConversaionForm" class="createNewConversaionForm" onsubmit="event.preventDefault(); createNewConversation();">
-          <input type="name" name="name" id="newConversationName" placeholder="conversation name" required></input>
+        <form id="createNewConversaionForm" class="createNewConversaionForm">
+          <input type="text" name="name" id="newConversationName" placeholder="conversation name" required />
           <button type="submit">Create new conversation</button>
         </form>
         <div class="conversations" id="conversations"></div>
@@ -83,7 +83,8 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <!-- Load socket.io client from the server to ensure version compatibility with the server-side socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
 
   <!-- Optional JavaScript -->
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->

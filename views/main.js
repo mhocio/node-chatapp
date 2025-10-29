@@ -10,6 +10,11 @@ messages = {};
 activeConversation = {};
 
 function createNewConversation() {
+  // ensure we have the event and prevent default form submission when invoked from inline onsubmit
+  if (arguments && arguments[0] && typeof arguments[0].preventDefault === 'function') {
+    arguments[0].preventDefault();
+  }
+  console.log('createNewConversation called');
   const newConversationName = document.getElementById("newConversationName").value;
   console.log(newConversationName);
   fetch('/conversations/', {
@@ -95,13 +100,18 @@ socket.on('connect', async function () {
   console.log("sort connect");
   sortConversations();
   
-  console.log(conversations[0].id);
-  setTimeout(function() { changeActiveConversation(conversations[0]); sortConversations();}, 1200);
-  //changeActiveConversation(conversations[0]);
+  // If there are any conversations, set the first one active. Guard against empty lists.
+  if (conversations && conversations.length > 0 && conversations[0]) {
+    console.log(conversations[0].id);
+    setTimeout(function() { changeActiveConversation(conversations[0]); sortConversations();}, 1200);
+  }
+  // otherwise there are no conversations yet - nothing to activate.
 });
 
 function changeActiveConversation(conversation) {
-  if (document.getElementById(activeConversation.id)) {
+  if (!conversation || !conversation.id) return; // nothing to do
+
+  if (activeConversation && activeConversation.id && document.getElementById(activeConversation.id)) {
     document.getElementById(activeConversation.id).classList.remove("active-conversation");
   }
   if (document.getElementById(conversation.id)) {
@@ -109,7 +119,7 @@ function changeActiveConversation(conversation) {
   }
 
   activeConversation.id = conversation.id;
-  activeConversation.name = conversation.name;
+  activeConversation.name = conversation.name || activeConversation.name;
   if (activeConversation.name) {
     document.getElementById("active-conversation-text").innerHTML = activeConversation.name;
   } else {
@@ -269,11 +279,14 @@ socket.on("message", function (data) {
 
   if (data.room) {
     var c = conversations.find(x => x.id === data.room);
-    c.lastmessage = data;
-    // console.log(c);
     if (!c) {
+      // We don't know this conversation yet; request the conversation list to sync state.
+      console.warn('Received message for unknown conversation', data.room);
+      refreshConversationsList();
       return;
     }
+    // update last message for sorting
+    c.lastmessage = data;
 
     // if (!messages[c.id]) {
     //   messages[c.id] = [newMessage];
@@ -379,3 +392,13 @@ async function subscribe() {
 }
 
 subscribe();
+
+// Attach event listener for create conversation form instead of using inline onsubmit
+try {
+  const createForm = document.getElementById('createNewConversaionForm');
+  if (createForm) {
+    createForm.addEventListener('submit', createNewConversation);
+  }
+} catch (e) {
+  console.error('Failed to attach create conversation form listener', e);
+}

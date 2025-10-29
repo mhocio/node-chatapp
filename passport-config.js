@@ -22,13 +22,46 @@ function initialize(passport, users) {
 
   passport.use(new LocalStrategy({ usernameField: 'name' }, authenticateUser));
   
-  passport.serializeUser((user, done) => done(null, user.id));
+		// Serialize the user: prefer explicit `id`. If the user document only has `_id`,
+		// persist that value into the `id` field in the DB so the rest of the app can
+		// always rely on req.session.passport.user being the `id` field.
+		passport.serializeUser(async (user, done) => {
+			try {
+				if (user.id) {
+					return done(null, user.id);
+				}
+				if (user._id) {
+					const newId = String(user._id);
+					// Persist the id field on the user document so future lookups by `id` succeed.
+					try {
+						await users.update({ _id: user._id }, { $set: { id: newId } });
+					} catch (e) {
+						// Non-fatal: continue and serialize the _id string
+						console.warn('Failed to persist id field for user during serializeUser', e.message);
+					}
+					return done(null, newId);
+				}
+				return done(new Error('Cannot serialize user: no id or _id present'));
+			} catch (err) {
+				return done(err);
+			}
+		});
 
-  passport.deserializeUser(function (id, done) {
-      return users.findOne({ id: id }, function (error, user) {
-          return done(error, user);
-      });
-    });
+	// Deserialize: try to find by `id` field first, then by `_id` for compatibility
+	passport.deserializeUser(async (id, done) => {
+		try {
+			let user = null;
+			if (!id) return done(null, false);
+			user = await users.findOne({ id: id });
+			if (!user) {
+				// attempt to find by _id (monk may accept string form)
+				user = await users.findOne({ _id: id });
+			}
+			return done(null, user);
+		} catch (error) {
+			return done(error);
+		}
+	});
 }
 
 module.exports = initialize;

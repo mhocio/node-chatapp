@@ -86,43 +86,39 @@ module.exports = function (users, conversations) {
 				throw new Ex(403, "user already added before", "denied");
 			}
 
-			// need to change to atomic operation
-			conversations.update({
-					id: conversationId
-				}, {
-					$addToSet: {
-						"participants": {
-							id: newParticipantId,
-						}
-					}
-				},
-				(err, result) => {}
-			);
-			users.update({
-					id: newParticipantId
-				}, {
-					$addToSet: {
-						"conversations": {
-							id: conversationId,
-							name: conversation.name
-						}
-					}
-				},
-				(err, result) => {}
-			);
-
-			users.update({
-				id: newParticipantId
-			}, {
+		// need to change to atomic operation - do updates and await them so we can log errors
+		try {
+			await conversations.update({ id: conversationId }, {
 				$addToSet: {
-					"newConversations": {
-						id: conversationId,
-						name: conversation.name
-					}
+					"participants": { id: newParticipantId }
 				}
-			},
-			(err, result) => {}
-		);
+			});
+		} catch (e) {
+			console.error('Failed updating conversation participants:', e.message);
+			throw e;
+		}
+
+		try {
+			await users.update({ id: newParticipantId }, {
+				$addToSet: {
+					"conversations": { id: conversationId, name: conversation.name }
+				}
+			});
+		} catch (e) {
+			console.error('Failed updating new participant conversations:', e.message);
+			throw e;
+		}
+
+		try {
+			await users.update({ id: newParticipantId }, {
+				$addToSet: {
+					"newConversations": { id: conversationId, name: conversation.name }
+				}
+			});
+		} catch (e) {
+			console.error('Failed updating newConversations for user:', e.message);
+			throw e;
+		}
 
 			res.json('sucess');
 		} catch (error) {
@@ -185,20 +181,17 @@ module.exports = function (users, conversations) {
 		});
 		console.log(creator);
 		if (creator) {
-			users.update({
-					id: creatorId
-				}, {
+			try {
+				await users.update({ id: creatorId }, {
 					$addToSet: {
-						"conversations": {
-							id: conversationId,
-							name: newConversationName,
-						}
+						"conversations": { id: conversationId, name: newConversationName }
 					}
-				},
-				(err, result) => {}
-			);
+				});
+			} catch (e) {
+				console.error('Failed to add conversation to creator:', e.message);
+			}
 		} else {
-			console.log('add these to user?');
+			console.log('creator not found when creating conversation');
 		}
 
 		console.log(createdConversation);
