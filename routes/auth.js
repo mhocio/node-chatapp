@@ -57,8 +57,12 @@ module.exports = function (passport, authPath, users) {
   });
 
   router.delete('/logout', (req, res) => {
-    req.logOut();
-    res.redirect('/');
+    req.logOut((err) => {
+      if (err) {
+        return res.status(500).send('Logout failed');
+      }
+      res.redirect('/');
+    });
   });
 
   return router;
