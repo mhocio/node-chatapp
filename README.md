@@ -41,3 +41,43 @@ npm test
 - [ ] Add test fixtures/seeds for users and conversations.
 - [ ] Add CI coverage reporting and thresholds.
 - [ ] Add linting (ESLint) with CI enforcement.
+
+## Roadmap (ordered, detailed)
+1. Test foundation:
+   - add fixtures and seed helpers
+   - add test DB reset/cleanup
+   - document test env setup
+2. Auth route tests:
+   - register success
+   - register duplicate email/name
+   - login success
+   - login invalid credentials
+   - logout clears session
+3. Conversation route tests:
+   - list conversations (authenticated)
+   - create conversation
+   - add user to conversation
+   - permission errors for non-owners
+   - 404/invalid id cases
+4. Socket tests:
+   - connect + join room
+   - send/receive message
+   - disconnect cleanup
+5. CI quality gates:
+   - enable coverage reporting
+   - set minimum coverage thresholds
+6. Linting:
+   - ESLint config + scripts
+   - enforce in CI
+7. Server cleanup:
+   - split routes/controllers/services
+   - add repository layer for DB access
+8. Error handling:
+   - standardize error shape
+   - centralize error middleware
+9. Rate limiting:
+   - protect auth endpoints
+   - protect message send endpoints
+10. UI rewrite:
+   - rebuild in React/Vue/Svelte
+   - define state management + API layer
