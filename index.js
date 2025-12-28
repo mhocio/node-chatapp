@@ -61,6 +61,8 @@ app.use(flash());
 
 const MongoStore = require('connect-mongo');
 
+const isTestEnv = process.env.NODE_ENV && String(process.env.NODE_ENV).toLowerCase() === 'test';
+
 // Build the session options object
 let sess = {
   secret: process.env.SESSION_SECRET,
@@ -69,7 +71,7 @@ let sess = {
   },
   resave: false,
   saveUninitialized: true,
-  store: MongoStore.create({
+  store: isTestEnv ? new session.MemoryStore() : MongoStore.create({
     mongoUrl: process.env.MONGO_SESSIONS_URI
   })
 };
@@ -131,22 +133,30 @@ app.use((error, req, res, next) => {
   res.status(status).json(error.message);
 });
 
-// INIT SERVER
-const server = app.listen(port, () => {
-  console.log('\x1b[36m%s\x1b[0m', `Listening at: http://localhost:${port}`);
-});
+function startServer() {
+  const server = app.listen(port, () => {
+    console.log('\x1b[36m%s\x1b[0m', `Listening at: http://localhost:${port}`);
+  });
 
+  // Socket setup
+  const io = socket(server);
+  io.use(function (socket, next) {
+    sessionMiddleware(socket.request, {}, next); // Wrap the express middleware
+  });
+  io.on("connection", function (socket) {
+    //socket.io.engine.id = socket.request.session.passport.user;
+    const {
+      socketModule
+    } = require('./controllers/socket.js');
+    socketModule(io, socket, users, conversations);
+    return io;
+  });
 
-// Socket setup
-const io = socket(server);
-io.use(function (socket, next) {
-  sessionMiddleware(socket.request, {}, next); // Wrap the express middleware
-});
-io.on("connection", function (socket) {
-  //socket.io.engine.id = socket.request.session.passport.user;
-  const {
-    socketModule
-  } = require('./controllers/socket.js');
-  socketModule(io, socket, users, conversations);
-  return io;
-});
+  return server;
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

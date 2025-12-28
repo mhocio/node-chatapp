@@ -9,4 +9,8 @@ const conversationsDb = monk(process.env.MONGODB_USERS_CONVERSATIONS);
 const conversations = conversationsDb.get('conversations');
 conversations.createIndex({ id: 1 }, { unique: true });
 
-module.exports = { users, conversations };
+async function closeDatabases() {
+  await Promise.all([usersDb.close(), conversationsDb.close()]);
+}
+
+module.exports = { users, conversations, closeDatabases };

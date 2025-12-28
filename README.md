@@ -22,3 +22,15 @@ npm run dev
 ## Scripts
 - `npm start`: run the server with Node.
 - `npm run dev`: run with nodemon for development.
+- `npm test`: run the Node.js test runner.
+- `npm run test:watch`: watch mode for tests.
+
+## Testing
+Tests use Node's built-in test runner and require MongoDB.
+- Create a `.env.test` file based on `.env.test.example`.
+- Ensure MongoDB is running locally.
+- Run:
+
+```sh
+npm test
+```
