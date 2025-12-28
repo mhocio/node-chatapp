@@ -34,3 +34,10 @@ Tests use Node's built-in test runner and require MongoDB.
 ```sh
 npm test
 ```
+
+## TODO
+- [ ] Add more HTTP route coverage (auth, conversations, error cases).
+- [ ] Add socket.io integration tests (connect, join, message flow).
+- [ ] Add test fixtures/seeds for users and conversations.
+- [ ] Add CI coverage reporting and thresholds.
+- [ ] Add linting (ESLint) with CI enforcement.
