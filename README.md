@@ -35,49 +35,42 @@ Tests use Node's built-in test runner and require MongoDB.
 npm test
 ```
 
-## TODO
-- [ ] Add more HTTP route coverage (auth, conversations, error cases).
-- [ ] Add socket.io integration tests (connect, join, message flow).
-- [ ] Add test fixtures/seeds for users and conversations.
-- [ ] Add CI coverage reporting and thresholds.
-- [ ] Add linting (ESLint) with CI enforcement.
+## V1 Roadmap (ordered)
 
-## Roadmap (ordered, detailed)
-1. Test foundation:
-   - add fixtures and seed helpers
-   - add test DB reset/cleanup
-   - document test env setup
-2. Auth route tests:
-   - register success
-   - register duplicate email/name
-   - login success
-   - login invalid credentials
-   - logout clears session
-3. Conversation route tests:
-   - list conversations (authenticated)
-   - create conversation
-   - add user to conversation
-   - permission errors for non-owners
-   - 404/invalid id cases
-4. Socket tests:
-   - connect + join room
-   - send/receive message
-   - disconnect cleanup
-5. CI quality gates:
-   - enable coverage reporting
-   - set minimum coverage thresholds
-6. Linting:
-   - ESLint config + scripts
-   - enforce in CI
-7. Server cleanup:
-   - split routes/controllers/services
-   - add repository layer for DB access
-8. Error handling:
-   - standardize error shape
-   - centralize error middleware
-9. Rate limiting:
-   - protect auth endpoints
-   - protect message send endpoints
-10. UI rewrite:
-   - rebuild in React/Vue/Svelte
-   - define state management + API layer
+### Stack
+- Frontend: React + Vite + TypeScript
+- State: Zustand + TanStack Query
+- UI: shadcn/ui or Radix + Tailwind
+- Backend: Express + Socket.IO
+- Testing: Node test runner (API), Playwright or Vitest (web)
+- CI: GitHub Actions
+
+### Phase 0 - Foundation (tests + CI)
+- Add fixtures and seed helpers.
+- Add test DB reset/cleanup utility.
+- Auth tests: register, login, logout, duplicates, invalid credentials.
+- Conversation tests: create, list, add user, permissions, invalid IDs.
+- Socket tests: connect, join, send/receive, disconnect cleanup.
+- Add coverage reports and minimum thresholds.
+- Add ESLint + formatting and enforce in CI.
+
+### Phase 1 - Server cleanup
+- Split routes/controllers/services for readability.
+- Add repository layer for DB access.
+- Standardize error shape and centralize error middleware.
+- Add rate limiting for auth and message endpoints.
+
+### Phase 2 - Web UI
+- Create React app with Vite + TypeScript.
+- Build auth screens (login/register).
+- Build chat layout (sidebar + chat panel).
+- Message list + composer with delivery state.
+- Socket hooks and state management.
+- Mobile-first responsive layout.
+
+### Phase 3 - Product polish
+- Profile settings and avatar upload.
+- Password reset flow.
+- Message edit/delete/reactions.
+- Search conversation history.
+- Basic analytics/logging and health check endpoint.
